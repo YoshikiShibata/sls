@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -19,15 +19,29 @@ func TestSimpleLockAndUnlock(t *testing.T) {
 		unlockURL = "http://localhost:8000/unlock"
 	)
 
+	readBodyAndShowResponse := func(resp *http.Response) {
+		// レスポンスのBodyを読み込む
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("ioutil.ReadAll failed: %v", err)
+		}
+
+		// レスポンスの内容を表示
+		t.Logf("Response Status: %v", resp.Status)
+		t.Logf("Response Body: %s", string(body))
+	}
+
+	paths := []string{"login", "shop", "operator"}
+
 	var wg sync.WaitGroup
-	for range 10 {
+	for i := range 10 {
 		wg.Add(1)
-		go func() {
+		go func(path string) {
 			defer wg.Done()
 
 			lockReq := &LockRequest{
 				UUID: uuid.NewString(),
-				Path: "login",
+				Path: path,
 			}
 			unlockReq := &UnlockRequest{
 				UUID: lockReq.UUID,
@@ -50,16 +64,9 @@ func TestSimpleLockAndUnlock(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			// レスポンスのBodyを読み込む
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("ioutil.ReadAll failed: %v", err)
-				return
-			}
+			readBodyAndShowResponse(resp)
 
-			// レスポンスの内容を表示
-			fmt.Println("Response Status:", resp.Status)
-			fmt.Println("Response Body:", string(body))
+			time.Sleep(400 * time.Millisecond)
 
 			// HTTPリクエストを作成
 			resp, err = http.Post(unlockURL, "application/json", bytes.NewBuffer(unlockReqBuf))
@@ -68,16 +75,8 @@ func TestSimpleLockAndUnlock(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			// レスポンスのBodyを読み込む
-			body, err = ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("ioutil.ReadAll failed: %v", err)
-			}
-
-			// レスポンスの内容を表示
-			fmt.Println("Response Status:", resp.Status)
-			fmt.Println("Response Body:", string(body))
-		}()
+			readBodyAndShowResponse(resp)
+		}(paths[i%3])
 	}
 	wg.Wait()
 }

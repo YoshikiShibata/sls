@@ -99,4 +99,6 @@ func (l *Locker) rescanLockRequests() {
 		newLockRequests = append(newLockRequests, request)
 	}
 	l.lockRequests = newLockRequests
+	log.Printf("rescanLockRequests: len(l.lockRequests): %d",
+		len(l.lockRequests))
 }
