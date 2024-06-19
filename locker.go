@@ -67,7 +67,7 @@ func (l *Locker) ClearAll() chan int {
 func (l *Locker) monitor() {
 	for {
 		select {
-		case lockReq := <-locker.lock:
+		case lockReq := <-l.lock:
 			if lockReq.UUID == "" || lockReq.Path == "" {
 				log.Printf("Invalid Lock Request[%s:%s]: Ignored", lockReq.Path, lockReq.UUID)
 				continue
@@ -76,7 +76,7 @@ func (l *Locker) monitor() {
 			l.lockRequests = append(l.lockRequests, lockReq)
 
 			l.rescanLockRequests()
-		case unlockReq := <-locker.unlock:
+		case unlockReq := <-l.unlock:
 			if unlockReq.UUID == "" || unlockReq.Path == "" {
 				log.Printf("Invalid Unlock Request[%s:%s]: Ignored", unlockReq.Path, unlockReq.UUID)
 				continue
@@ -97,7 +97,7 @@ func (l *Locker) monitor() {
 			log.Printf("[%s:%s] Unlocked", unlockReq.Path, unlockReq.UUID)
 
 			l.rescanLockRequests()
-		case clearReq := <-locker.clear:
+		case clearReq := <-l.clear:
 			for _, request := range l.lockRequests {
 				request.response <- http.StatusGone
 				close(request.response)

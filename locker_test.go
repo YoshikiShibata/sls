@@ -62,7 +62,7 @@ func TestSimpleClearAll(t *testing.T) {
 		}(paths[i%3])
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 	clearReq := createClearReq(t, true)
 	resp := sendRequest(t, clearURL, clearReq)
 	readBodyAndShowResponse(t, resp)
