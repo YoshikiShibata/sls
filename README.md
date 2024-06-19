@@ -4,9 +4,9 @@ Simple Lock Service
 
 `sls` works as a web server which has following endpoints
 
-- /lock
-- /unlock
-- /clear
+- :8000/lock
+- :8000/unlock
+- :8000/clear
 
 ### lock / unlock
 
