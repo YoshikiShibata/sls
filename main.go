@@ -17,5 +17,6 @@ func main() {
 	http.HandleFunc("/", genericHandler)
 	http.HandleFunc("/lock", handleLock)
 	http.HandleFunc("/unlock", handleUnlock)
-	log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil))
+	log.Printf("Running on :8000")
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
