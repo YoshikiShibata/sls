@@ -11,3 +11,7 @@ type UnlockRequest struct {
 	UUID string `json:"uuid"`
 	Path string `json:"path"`
 }
+
+type ClearRequest struct {
+	ClearAll bool `json:"clear_all"`
+}
