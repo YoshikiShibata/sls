@@ -10,7 +10,7 @@ import (
 var locker *Locker
 
 func main() {
-	log.Printf("Simple Locker Server v0.0")
+	log.Printf("Simple Locker Server v0.1.1")
 
 	locker = NewLocker()
 
