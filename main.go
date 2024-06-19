@@ -7,12 +7,12 @@ import (
 	"net/http"
 )
 
-const version = "v0.2.0"
+const version = "v0.2.1"
 
 var locker *Locker
 
 func main() {
-	log.Printf("Simple Locker Server %s", version)
+	log.Printf("Simple Lock Service %s", version)
 
 	locker = NewLocker()
 
