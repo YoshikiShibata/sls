@@ -10,12 +10,13 @@ import (
 var locker *Locker
 
 func main() {
-	log.Printf("Simple Locker Server v0.0")
+	log.Printf("Simple Locker Server v0.1.1")
 
 	locker = NewLocker()
 
 	http.HandleFunc("/", genericHandler)
 	http.HandleFunc("/lock", handleLock)
 	http.HandleFunc("/unlock", handleUnlock)
-	log.Fatal(http.ListenAndServe("localhost:8000", nil))
+	log.Printf("Running on :8000")
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
