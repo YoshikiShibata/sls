@@ -2,17 +2,21 @@
 
 package main
 
-import "log"
+import (
+	"log"
+	"net/http"
+)
 
 type LockerRequest struct {
 	UUID     string
 	Path     string
-	response chan struct{}
+	response chan int
 }
 
 type Locker struct {
 	lock   chan *LockerRequest
 	unlock chan *LockerRequest
+	clear  chan *LockerRequest
 
 	lockedMap    map[string]string
 	lockRequests []*LockerRequest
@@ -22,14 +26,15 @@ func NewLocker() *Locker {
 	locker := &Locker{
 		lock:      make(chan *LockerRequest, 10),
 		unlock:    make(chan *LockerRequest, 10),
+		clear:     make(chan *LockerRequest),
 		lockedMap: make(map[string]string),
 	}
 	go locker.monitor()
 	return locker
 }
 
-func (l *Locker) Lock(request LockRequest) chan struct{} {
-	response := make(chan struct{})
+func (l *Locker) Lock(request LockRequest) chan int {
+	response := make(chan int)
 	l.lock <- &LockerRequest{
 		UUID:     request.UUID,
 		Path:     request.Path,
@@ -39,11 +44,20 @@ func (l *Locker) Lock(request LockRequest) chan struct{} {
 	return response
 }
 
-func (l *Locker) Unlock(request UnlockRequest) chan struct{} {
-	response := make(chan struct{})
+func (l *Locker) Unlock(request UnlockRequest) chan int {
+	response := make(chan int)
 	l.unlock <- &LockerRequest{
 		UUID:     request.UUID,
 		Path:     request.Path,
+		response: response,
+	}
+
+	return response
+}
+
+func (l *Locker) ClearAll() chan int {
+	response := make(chan int)
+	l.clear <- &LockerRequest{
 		response: response,
 	}
 
@@ -78,10 +92,20 @@ func (l *Locker) monitor() {
 				continue
 			}
 			delete(l.lockedMap, unlockReq.Path)
+			unlockReq.response <- http.StatusOK
 			close(unlockReq.response)
 			log.Printf("[%s:%s] Unlocked", unlockReq.Path, unlockReq.UUID)
 
 			l.rescanLockRequests()
+		case clearReq := <-locker.clear:
+			for _, request := range l.lockRequests {
+				request.response <- http.StatusGone
+				close(request.response)
+			}
+			l.lockRequests = nil
+			clearReq.response <- http.StatusOK
+			close(clearReq.response)
+			clear(l.lockedMap)
 		}
 	}
 }
@@ -92,6 +116,7 @@ func (l *Locker) rescanLockRequests() {
 		_, ok := l.lockedMap[request.Path]
 		if !ok {
 			l.lockedMap[request.Path] = request.UUID
+			request.response <- http.StatusOK
 			close(request.response)
 			log.Printf("[%s:%s] Locked", request.Path, request.UUID)
 			continue
